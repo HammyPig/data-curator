@@ -4,6 +4,7 @@ from PIL import Image
 
 class Curator:
 
+    log_filename = "_curator.log"
     devices = ["iphone5", "iphone7"]
 
     def get_rename_queue(path, device):
@@ -26,7 +27,7 @@ class Curator:
             except:
                 pass
             
-            if filename == "_renames.log":
+            if filename == Curator.log_filename:
                 continue
 
             if filename.startswith(f"{time_created_str}_"):
@@ -45,7 +46,7 @@ class Curator:
     def execute_renames(rename_queue, path, undo=False):
         status_msg = ""
         count = 0
-        with open(path + "_renames.log", "a") as f:
+        with open(path + Curator.log_filename, "a") as f:
             for i, rename in enumerate(rename_queue):
 
                 if undo:
