@@ -110,7 +110,7 @@ class Curator:
             user_undo = input("Would you like to undo changes? y/n ")
 
             if user_undo == "y":
-                execute_renames(renames, undo=True)
+                Curator.execute_renames(rename_queue, path, undo=True)
                 break
             elif user_undo == "n":
                 break
