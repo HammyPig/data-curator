@@ -5,6 +5,7 @@ from PIL import Image
 class Curator:
 
     log_filename = "_curator.log"
+    archive_path_filename = ".archive-path.txt"
     devices = ["iphone5", "iphone7"]
 
     def get_rename_queue(path, device):
@@ -93,10 +94,33 @@ class Curator:
 
         print(f"Successfuly renamed {count} files!")
 
+    def curate(path, device):
+        print("Collecting files...")
+        rename_queue = Curator.get_rename_queue(path, device)
+        
+        user_continue = input(f"{len(rename_queue)} files ready to be renamed. Do you wish to continue? y/n")
+
+        if user_continue != "y":
+            exit(0)
+
+        Curator.execute_renames(rename_queue, path, undo=False)
+
+        # optionally undo most recent renames
+        while True:
+            user_undo = input("Would you like to undo changes? y/n ")
+
+            if user_undo == "y":
+                execute_renames(renames, undo=True)
+                break
+            elif user_undo == "n":
+                break
+            else:
+                print("Please answer with y/n")
+                pass
+
     def run():
         
         def get_welcome_message():
-
             owl_art = """\
            _________
   /\ /\\   /         \\
@@ -128,43 +152,59 @@ class Curator:
                     return device
                 except (TypeError, IndexError) as e:
                     print(f"ERROR: Please enter a number from 0 to {len(Curator.devices) - 1}")
-        
-        def get_path():
-            path = input("Paste destination path from windows explorer: ")
-            #path = "E:\\archive\\images\\photos"
 
-            path = path.replace("\\", "/")
-            path += "/"
+        def get_archive_path(override=False):
+            
+            def cache_archive_path():
+                path = input("Please paste a destination path to store your archive in: ")
+                print()
+                
+                path = path.replace("\\", "/")
+
+                if path[-1] != "/":
+                    path += "/"
+
+                with open(Curator.archive_path_filename, "w") as f:
+                    f.write(path)
+                
+                return path
+
+            if (not os.path.exists(Curator.archive_path_filename)) or override:
+                path = cache_archive_path()
+            else:
+                with open(Curator.archive_path_filename, "r") as f:
+                    path = f.readline()
+
+            print(f"Destination path being used: '{path}'\n")
 
             return path
 
         print(get_welcome_message())
 
+        path = get_archive_path()
         device = get_device_name()
-        path = get_path()
 
-        print("Collecting files...")
-        rename_queue = Curator.get_rename_queue(path, device)
-        
-        user_continue = input(f"{len(rename_queue)} files ready to be renamed. Do you wish to continue? y/n")
+        user_actions = {
+            "0": ("Change destination path", get_archive_path, [True]),
+            "1": ("Curate directory", Curator.curate, [path, device]),
+            "q": ("Exit", exit, [0])
+        }
 
-        if user_continue != "y":
-            exit(0)
-
-        Curator.execute_renames(rename_queue, path, undo=False)
-
-        # optionally undo most recent renames
         while True:
-            user_undo = input("Would you like to undo changes? y/n ")
+            
+            for action_key, action in user_actions.items():
+                desc = action[0]
+                print(f"{action_key}: {desc}")
+            print()
 
-            if user_undo == "y":
-                execute_renames(renames, undo=True)
-                break
-            elif user_undo == "n":
-                break
-            else:
-                print("Please answer with y/n")
-                pass
+            user_action_key = input("User action: ")
+            print()
+
+            try:
+                desc, func, args = user_actions[user_action_key]
+                func(*args)
+            except KeyError:
+                print(f"ERROR: Please enter a number from 0 to {len(user_actions) - 1}")
 
 def main():
     Curator.run()
