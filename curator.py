@@ -95,6 +95,27 @@ class Curator:
 
     def run():
         
+        def get_welcome_message():
+
+            owl_art = """\
+           _________
+  /\ /\\   /         \\
+ ((ovo)) <  Welcome! |
+ ():::()  \\_________/
+   VVV\
+"""
+            title_name = "DATA CURATOR"
+            title_width = 32
+            
+            program_title = f"""\
+{owl_art}
+{title_width*"-"}
+{title_name:^{title_width}}
+{title_width*"-"}
+"""
+
+            return program_title
+
         def get_device_name():
             while True:
                 for i, device in enumerate(Curator.devices):
@@ -116,6 +137,8 @@ class Curator:
             path += "/"
 
             return path
+
+        print(get_welcome_message())
 
         device = get_device_name()
         path = get_path()
