@@ -91,14 +91,20 @@ class Curator:
                 count += 1
 
             f.write("\n")
+        
+        if undo:
+            action_desc = "undid"
+        else:
+            action_desc = "renamed"
 
-        print(f"Successfuly renamed {count} files!")
+        print(f"Successfuly {action_desc} {count} files!\n")
 
     def curate(path, device):
-        print("Collecting files...")
+        print("Collecting files...\n")
         rename_queue = Curator.get_rename_queue(path, device)
         
-        user_continue = input(f"{len(rename_queue)} files ready to be renamed. Do you wish to continue? y/n")
+        user_continue = input(f"{len(rename_queue)} files ready to be renamed. Do you wish to continue? y/n ")
+        print()
 
         if user_continue != "y":
             exit(0)
@@ -108,6 +114,7 @@ class Curator:
         # optionally undo most recent renames
         while True:
             user_undo = input("Would you like to undo changes? y/n ")
+            print()
 
             if user_undo == "y":
                 Curator.execute_renames(rename_queue, path, undo=True)
