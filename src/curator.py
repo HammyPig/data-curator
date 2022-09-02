@@ -8,6 +8,29 @@ class Curator:
     archive_path_filename = ".archive-path.txt"
     devices = ["iphone5", "iphone7"]
 
+    def curated(file_path, device=""):
+        # date attribute
+        date_modified = os.path.getmtime(file_path)
+        date_modified = datetime.datetime.fromtimestamp(date_modified)
+        date_modified_str = date_modified.strftime("%Y-%m-%d")
+        time_created_str = date_modified_str
+        
+        try:
+            date_taken = Image.open(file_path)._getexif()[36867]
+            date_taken = datetime.datetime.strptime(date_taken, "%Y:%m:%d %H:%M:%S")
+            date_taken_str = date_taken.strftime("%Y-%m-%d")
+            time_created_str = date_taken_str
+        except:
+            pass
+        
+        directory = os.path.dirname(file_path)
+        filename = os.path.basename(file_path)
+
+        if device == "":
+            return f"{time_created_str}_{filename}"
+        else:
+            return f"{time_created_str}_{device}_{filename}"
+
     def get_rename_queue(path, device=""):
         rename_queue = []
         files = os.listdir(path)
@@ -15,34 +38,13 @@ class Curator:
         for filename in files:
             absolute_path = path + filename
 
-            date_modified = os.path.getmtime(absolute_path)
-            date_modified = datetime.datetime.fromtimestamp(date_modified)
-            date_modified_str = date_modified.strftime("%Y-%m-%d")
-            time_created_str = date_modified_str
-            
-            try:
-                date_taken = Image.open(absolute_path)._getexif()[36867]
-                date_taken = datetime.datetime.strptime(date_taken, "%Y:%m:%d %H:%M:%S")
-                date_taken_str = date_taken.strftime("%Y-%m-%d")
-                time_created_str = date_taken_str
-            except:
-                pass
-            
             if filename == Curator.log_filename:
                 continue
 
-            if filename.startswith(f"{time_created_str}_"):
+            if len(filename) > 10 and filename[10] == "_":
                 continue
 
-            if filename.startswith(f"{date_modified_str}_"):
-                new_filename = f"{time_created_str}{filename[10:]}"
-                rename_queue.append((filename, new_filename))
-                continue
-            
-            if device == "":
-                new_filename = f"{time_created_str}_{filename}" 
-            else:
-                new_filename = f"{time_created_str}_{device}_{filename}"
+            new_filename = Curator.curated(absolute_path, device)
             rename_queue.append((filename, new_filename))
 
         return rename_queue
@@ -102,7 +104,7 @@ class Curator:
 
         print(f"Successfuly {action_desc} {count} files!\n")
 
-    def curate(path, device):
+    def curate_from_source(path, device):
         print("Collecting files...\n")
         rename_queue = Curator.get_rename_queue(path, device)
         
