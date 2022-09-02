@@ -1,4 +1,4 @@
-from curator import Curator
+from src.curator import Curator
 import shutil
 import re
 import os

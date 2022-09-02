@@ -1,5 +1,5 @@
 import os
-from curator import Curator
+from src.curator import Curator
 
 
 def welcome_message():
