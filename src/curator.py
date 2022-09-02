@@ -219,9 +219,3 @@ class Curator:
                 func(*args)
             except KeyError:
                 print(f"ERROR: Please enter a number from 0 to {len(user_actions) - 1}")
-
-def main():
-    Curator.run()
-
-if __name__ == "__main__":
-    main()
