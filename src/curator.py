@@ -109,17 +109,3 @@ class Curator:
             exit(0)
 
         Curator.execute_renames(rename_queue, path, undo=False)
-
-        # optionally undo most recent renames
-        while True:
-            user_undo = input("Would you like to undo changes? y/n ")
-            print()
-
-            if user_undo == "y":
-                Curator.execute_renames(rename_queue, path, undo=True)
-                break
-            elif user_undo == "n":
-                break
-            else:
-                print("Please answer with y/n")
-                pass
