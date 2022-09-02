@@ -8,7 +8,7 @@ class Curator:
     archive_path_filename = ".archive-path.txt"
     devices = ["iphone5", "iphone7"]
 
-    def get_rename_queue(path, device):
+    def get_rename_queue(path, device=""):
         rename_queue = []
         files = os.listdir(path)
 
@@ -38,8 +38,11 @@ class Curator:
                 new_filename = f"{time_created_str}{filename[10:]}"
                 rename_queue.append((filename, new_filename))
                 continue
-
-            new_filename = f"{time_created_str}_{device}_{filename}"
+            
+            if device == "":
+                new_filename = f"{time_created_str}_{filename}" 
+            else:
+                new_filename = f"{time_created_str}_{device}_{filename}"
             rename_queue.append((filename, new_filename))
 
         return rename_queue
@@ -149,10 +152,14 @@ class Curator:
 
         def get_device_name():
             while True:
+                print("-1: skip")
                 for i, device in enumerate(Curator.devices):
                     print(f"{i}: {device}")
-                
+
                 device_i = int(input("Select source device: "))
+
+                if device_i == -1:
+                    return ""
 
                 try:
                     device = Curator.devices[device_i]
@@ -189,7 +196,7 @@ class Curator:
         print(get_welcome_message())
 
         path = get_archive_path()
-        device = get_device_name()
+        device = ""
 
         user_actions = {
             "0": ("Change destination path", get_archive_path, [True]),
