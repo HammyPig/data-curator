@@ -38,12 +38,6 @@ class Curator:
         for filename in files:
             absolute_path = path + filename
 
-            if filename == Curator.log_filename:
-                continue
-
-            if len(filename) > 10 and filename[10] == "_":
-                continue
-
             new_filename = Curator.curated(absolute_path, device)
             rename_queue.append((filename, new_filename))
 
