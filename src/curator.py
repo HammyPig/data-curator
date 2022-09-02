@@ -8,6 +8,29 @@ class Curator:
     archive_path_filename = ".archive-path.txt"
     devices = ["iphone5", "iphone7"]
 
+    def curated(file_path, device=""):
+        # date attribute
+        date_modified = os.path.getmtime(file_path)
+        date_modified = datetime.datetime.fromtimestamp(date_modified)
+        date_modified_str = date_modified.strftime("%Y-%m-%d")
+        time_created_str = date_modified_str
+        
+        try:
+            date_taken = Image.open(file_path)._getexif()[36867]
+            date_taken = datetime.datetime.strptime(date_taken, "%Y:%m:%d %H:%M:%S")
+            date_taken_str = date_taken.strftime("%Y-%m-%d")
+            time_created_str = date_taken_str
+        except:
+            pass
+        
+        directory = os.path.dirname(file_path)
+        filename = os.path.basename(file_path)
+
+        if device == "":
+            return f"{time_created_str}_{filename}"
+        else:
+            return f"{time_created_str}_{device}_{filename}"
+
     def get_rename_queue(path, device=""):
         rename_queue = []
         files = os.listdir(path)
@@ -15,34 +38,13 @@ class Curator:
         for filename in files:
             absolute_path = path + filename
 
-            date_modified = os.path.getmtime(absolute_path)
-            date_modified = datetime.datetime.fromtimestamp(date_modified)
-            date_modified_str = date_modified.strftime("%Y-%m-%d")
-            time_created_str = date_modified_str
-            
-            try:
-                date_taken = Image.open(absolute_path)._getexif()[36867]
-                date_taken = datetime.datetime.strptime(date_taken, "%Y:%m:%d %H:%M:%S")
-                date_taken_str = date_taken.strftime("%Y-%m-%d")
-                time_created_str = date_taken_str
-            except:
-                pass
-            
             if filename == Curator.log_filename:
                 continue
 
-            if filename.startswith(f"{time_created_str}_"):
+            if len(filename) > 10 and filename[10] == "_":
                 continue
 
-            if filename.startswith(f"{date_modified_str}_"):
-                new_filename = f"{time_created_str}{filename[10:]}"
-                rename_queue.append((filename, new_filename))
-                continue
-            
-            if device == "":
-                new_filename = f"{time_created_str}_{filename}" 
-            else:
-                new_filename = f"{time_created_str}_{device}_{filename}"
+            new_filename = Curator.curated(absolute_path, device)
             rename_queue.append((filename, new_filename))
 
         return rename_queue
@@ -102,7 +104,7 @@ class Curator:
 
         print(f"Successfuly {action_desc} {count} files!\n")
 
-    def curate(path, device):
+    def curate_from_source(path, device):
         print("Collecting files...\n")
         rename_queue = Curator.get_rename_queue(path, device)
         
@@ -127,95 +129,3 @@ class Curator:
             else:
                 print("Please answer with y/n")
                 pass
-
-    def run():
-        
-        def get_welcome_message():
-            owl_art = """\
-           _________
-  /\ /\\   /         \\
- ((ovo)) <  Welcome! |
- ():::()  \\_________/
-   VVV\
-"""
-            title_name = "DATA CURATOR"
-            title_width = 32
-            
-            program_title = f"""\
-{owl_art}
-{title_width*"-"}
-{title_name:^{title_width}}
-{title_width*"-"}
-"""
-
-            return program_title
-
-        def get_device_name():
-            while True:
-                print("-1: skip")
-                for i, device in enumerate(Curator.devices):
-                    print(f"{i}: {device}")
-
-                device_i = int(input("Select source device: "))
-
-                if device_i == -1:
-                    return ""
-
-                try:
-                    device = Curator.devices[device_i]
-                    return device
-                except (TypeError, IndexError) as e:
-                    print(f"ERROR: Please enter a number from 0 to {len(Curator.devices) - 1}")
-
-        def get_archive_path(override=False):
-            
-            def cache_archive_path():
-                path = input("Please paste a destination path to store your archive in: ")
-                print()
-                
-                path = path.replace("\\", "/")
-
-                if path[-1] != "/":
-                    path += "/"
-
-                with open(Curator.archive_path_filename, "w") as f:
-                    f.write(path)
-                
-                return path
-
-            if (not os.path.exists(Curator.archive_path_filename)) or override:
-                path = cache_archive_path()
-            else:
-                with open(Curator.archive_path_filename, "r") as f:
-                    path = f.readline()
-
-            print(f"Destination path being used: '{path}'\n")
-
-            return path
-
-        print(get_welcome_message())
-
-        path = get_archive_path()
-        device = ""
-
-        user_actions = {
-            "0": ("Change destination path", get_archive_path, [True]),
-            "1": ("Curate directory", Curator.curate, [path, device]),
-            "q": ("Exit", exit, [0])
-        }
-
-        while True:
-            
-            for action_key, action in user_actions.items():
-                desc = action[0]
-                print(f"{action_key}: {desc}")
-            print()
-
-            user_action_key = input("User action: ")
-            print()
-
-            try:
-                desc, func, args = user_actions[user_action_key]
-                func(*args)
-            except KeyError:
-                print(f"ERROR: Please enter a number from 0 to {len(user_actions) - 1}")
