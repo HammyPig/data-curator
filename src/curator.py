@@ -5,6 +5,9 @@ from PIL import Image
 
 
 class Curator:
+
+    log_filename = "_curator.log"
+
     def __init__(self):
         self.archive_path = ""
 
@@ -78,12 +81,17 @@ class Curator:
             print(operation_cancelled_str)
             return
 
-        try:
-            for file_path in file_paths:
-                shutil.copy2(file_path, self.unique(self.curated(file_path)))
-        except KeyboardInterrupt:
-            print(operation_cancelled_str)
-            return
+        with open(self.archive_path + Curator.log_filename, "a") as f:
+            try:
+                for file_path in file_paths:
+                    old_file_path = file_path
+                    new_file_path = self.unique(self.curated(file_path))
+                    shutil.copy2(file_path, new_file_path)
+                    f.write(f"{old_file_path}>{new_file_path}\n")
+
+                print("Operation complete!\n")
+            except KeyboardInterrupt:
+                print(operation_cancelled_str)
 
     @staticmethod
     def unique(file_path):
