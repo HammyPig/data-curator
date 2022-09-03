@@ -15,7 +15,6 @@ class Curator:
         self.archive_path = archive_path
 
     def curated(self, file_path):
-        # date attribute
         date_modified = os.path.getmtime(file_path)
         date_modified = datetime.datetime.fromtimestamp(date_modified)
         date_modified_str = date_modified.strftime("%Y-%m-%d")
@@ -29,10 +28,9 @@ class Curator:
         except:
             pass
         
-        directory = os.path.dirname(file_path)
         filename = os.path.basename(file_path)
 
-        return f"{time_created_str}_{filename}"
+        return f"{self.archive_path}{time_created_str}_{filename}"
 
     def curate_from_source(self, path):
         # collect image files
