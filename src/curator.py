@@ -32,6 +32,20 @@ class Curator:
 
         return f"{self.archive_path}{time_created_str}_{filename}"
 
+    def unique(file_path):
+        unique_path = file_path
+        ext_i = file_path.rfind(".")
+
+        n = 1
+        while True:
+            if os.path.exists(unique_path):
+                unique_path = f"{file_path[:ext_i]}_COPY{n}{file_path[ext_i:]}"
+                n += 1
+            else:
+                break
+        
+        return unique_path
+
     def curate_from_source(self, path):
         # collect image files
         file_paths = []
@@ -55,4 +69,4 @@ class Curator:
             copy_queue.append((file_path, self.curated(file_path)))
 
         for old_file_path, new_file_path in copy_queue:
-            shutil.copy2(old_file_path, new_file_path)
+            shutil.copy2(old_file_path, Curator.unique(new_file_path))
