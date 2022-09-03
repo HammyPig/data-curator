@@ -1,6 +1,8 @@
 import os
 from src.curator import Curator
 
+ARCHIVE_PATH_FILENAME = ".archive-path.txt"
+
 
 def welcome_message():
     owl_art = (
@@ -13,7 +15,7 @@ def welcome_message():
 
     title_name = "DATA CURATOR"
     title_width = 32
-    
+
     program_title = (
         f"{owl_art}"
         f"{title_width*'-'}\n"
@@ -23,57 +25,61 @@ def welcome_message():
 
     return program_title
 
+
 def archive_path_input(override=False):
-        
     def cache_archive_path():
         path = input("Please paste a destination path to store your archive in: ")
         print()
-        
+
         path = path.replace("\\", "/")
 
         if path[-1] != "/":
             path += "/"
 
-        with open(Curator.archive_path_filename, "w") as f:
+        with open(ARCHIVE_PATH_FILENAME, "w") as f:
             f.write(path)
-        
+
         return path
 
-    if (not os.path.exists(Curator.archive_path_filename)) or override:
+    if (not os.path.exists(".archive-path.txt")) or override:
         path = cache_archive_path()
     else:
-        with open(Curator.archive_path_filename, "r") as f:
+        with open(ARCHIVE_PATH_FILENAME, "r") as f:
             path = f.readline()
 
     print(f"Destination path being used: '{path}'\n")
 
     return path
 
+
 def main():
     print(welcome_message())
 
-    path = archive_path_input()
+    c = Curator()
+    c.set_archive_path(archive_path_input())
 
     user_actions = (
-        "0: Change destination path\n"
-        "1: Curate from a directory\n"
-        "q: Exit\n"
+        "0: Change destination path\n" "1: Curate from a directory\n" "q: Exit\n"
     )
 
     while True:
-        
+
         print(user_actions)
         user_action_key = input("User action: ")
         print()
 
         if user_action_key == "0":
-            archive_path_input(True)
+            c.set_archive_path(archive_path_input(True))
         elif user_action_key == "1":
-            Curator.curate(path, device)
+            path = input("Please paste a source path: ")
+            print()
+            c.curate_from_source(path)
         elif user_action_key == "q":
+            print("Goodbye!")
             exit(0)
         else:
             print("ERROR: Please enter a valid user action")
+
 
 if __name__ == "__main__":
     main()

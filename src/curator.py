@@ -1,131 +1,120 @@
 import os
+import shutil
 import datetime
 from PIL import Image
+
 
 class Curator:
 
     log_filename = "_curator.log"
-    archive_path_filename = ".archive-path.txt"
-    devices = ["iphone5", "iphone7"]
 
-    def curated(file_path, device=""):
-        # date attribute
+    def __init__(self):
+        self.archive_path = ""
+
+    def get_archive_path(self):
+        return self.archive_path
+
+    def set_archive_path(self, archive_path):
+        self.archive_path = archive_path
+
+    def curated(self, file_path):
+        """
+        Return a curated file path.
+
+            Parameters
+                file_path (str): A file path e.g. C:/Users/James/Pictures/hello.jpg
+
+            Returns:
+                curated_file_path (str): A file path in the form of:
+                    <archive_path><time_created>_<original_filename>
+                    e.g. D:/archive/images/photos/2022-09-03_hello.jpg
+        """
         date_modified = os.path.getmtime(file_path)
         date_modified = datetime.datetime.fromtimestamp(date_modified)
         date_modified_str = date_modified.strftime("%Y-%m-%d")
         time_created_str = date_modified_str
-        
+
         try:
             date_taken = Image.open(file_path)._getexif()[36867]
             date_taken = datetime.datetime.strptime(date_taken, "%Y:%m:%d %H:%M:%S")
             date_taken_str = date_taken.strftime("%Y-%m-%d")
             time_created_str = date_taken_str
-        except:
+        except Exception:
             pass
-        
-        directory = os.path.dirname(file_path)
+
         filename = os.path.basename(file_path)
 
-        if device == "":
-            return f"{time_created_str}_{filename}"
-        else:
-            return f"{time_created_str}_{device}_{filename}"
+        return f"{self.archive_path}{time_created_str}_{filename}"
 
-    def get_rename_queue(path, device=""):
-        rename_queue = []
-        files = os.listdir(path)
+    def curate_from_source(self, path):
+        """
+        Copies all images from a source directory and pastes them into the
+        curated file path. Handles duplicate file paths automatically.
 
-        for filename in files:
-            absolute_path = path + filename
+            Parameters
+                path (str): A file path e.g. C:/Users/James/Pictures/
 
-            if filename == Curator.log_filename:
-                continue
+            Returns:
+                None
+        """
+        operation_cancelled_str = "Operation cancelled.\n"
 
-            if len(filename) > 10 and filename[10] == "_":
-                continue
+        # collect image files
+        try:
+            file_paths = []
+            for path, subdirs, files in os.walk(path):
+                for name in files:
+                    file_path = os.path.join(path, name)
+                    file_extension = file_path.split(".")[-1]
+                    if file_extension in ("jpg", "png"):
+                        file_paths.append(file_path)
+        except KeyboardInterrupt:
+            print(operation_cancelled_str)
+            return
 
-            new_filename = Curator.curated(absolute_path, device)
-            rename_queue.append((filename, new_filename))
-
-        return rename_queue
-
-    def execute_renames(rename_queue, path, undo=False):
-        status_msg = ""
-        count = 0
-        with open(path + Curator.log_filename, "a") as f:
-            for i, rename in enumerate(rename_queue):
-
-                if undo:
-                    new_filename, old_filename = rename
-                else:
-                    old_filename, new_filename = rename
-
-                try:
-                    os.rename(path + old_filename, path + new_filename)
-                except FileExistsError:
-                    # add duplicate notation
-                    ext_i= new_filename.rfind(".")
-                    n = 1
-                    while True:
-                        if n == 1:
-                            n_str = ""
-                        else:
-                            n_str = str(n)
-
-                        dupe_filename = f"{new_filename[:ext_i]}_COPY{n_str}{new_filename[ext_i:]}"
-
-                        try:
-                            os.rename(path + old_filename, path + dupe_filename)
-                            break
-                        except FileExistsError:
-                            n += 1
-
-                    if not undo:
-                        rename_queue[i] = (old_filename, dupe_filename)
-
-                    print(f"File {new_filename} already exists! Adding _COPY{n_str}...")
-                    new_filename = dupe_filename
-
-                except FileNotFoundError:
-                    error_msg = f"File {old_filename} could not be located! Skipping..."
-                    print(error_msg)
-                    f.write(error_msg + "\n")
-                    continue
-
-                f.write(f"{path + old_filename}>{path + new_filename}\n")
-                count += 1
-
-            f.write("\n")
-        
-        if undo:
-            action_desc = "undid"
-        else:
-            action_desc = "renamed"
-
-        print(f"Successfuly {action_desc} {count} files!\n")
-
-    def curate_from_source(path, device):
-        print("Collecting files...\n")
-        rename_queue = Curator.get_rename_queue(path, device)
-        
-        user_continue = input(f"{len(rename_queue)} files ready to be renamed. Do you wish to continue? y/n ")
+        continue_prompt = input(
+            f"{len(file_paths)} image files ready to be curated. Do you wish to continue? y/n "
+        )
         print()
 
-        if user_continue != "y":
-            exit(0)
+        if continue_prompt != "y":
+            print(operation_cancelled_str)
+            return
 
-        Curator.execute_renames(rename_queue, path, undo=False)
+        with open(self.archive_path + Curator.log_filename, "a") as f:
+            try:
+                for file_path in file_paths:
+                    old_file_path = file_path
+                    new_file_path = self.unique(self.curated(file_path))
+                    shutil.copy2(file_path, new_file_path)
+                    f.write(f"{old_file_path}>{new_file_path}\n")
 
-        # optionally undo most recent renames
+                print("Operation complete!\n")
+            except KeyboardInterrupt:
+                print(operation_cancelled_str)
+
+    @staticmethod
+    def unique(file_path):
+        """
+        Return a unique file path by adding _COPY<n> if the file path already exists.
+
+            Parameters
+                file_path (str): A file path e.g. C:/Users/James/Pictures/hello.jpg
+
+            Returns:
+                unique_path (str): A file path that does not exist
+                    e.g. C:/Users/James/Pictures/hello.jpg
+                    e.g. C:/Users/James/Pictures/hello_COPY.jpg
+        """
+        unique_path = file_path
+        ext_i = file_path.rfind(".")
+
+        n = 1
         while True:
-            user_undo = input("Would you like to undo changes? y/n ")
-            print()
-
-            if user_undo == "y":
-                Curator.execute_renames(rename_queue, path, undo=True)
-                break
-            elif user_undo == "n":
-                break
+            if os.path.exists(unique_path):
+                unique_path = f"{file_path[:ext_i]}_COPY{n}{file_path[ext_i:]}"
+                n += 1
             else:
-                print("Please answer with y/n")
-                pass
+                break
+
+        return unique_path
