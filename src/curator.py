@@ -3,8 +3,8 @@ import shutil
 import datetime
 from PIL import Image
 
-class Curator:
 
+class Curator:
     def __init__(self):
         self.archive_path = ""
 
@@ -20,7 +20,7 @@ class Curator:
 
             Parameters
                 file_path (str): A file path e.g. C:/Users/James/Pictures/hello.jpg
-            
+
             Returns:
                 curated_file_path (str): A file path in the form of:
                     <archive_path><time_created>_<original_filename>
@@ -30,15 +30,15 @@ class Curator:
         date_modified = datetime.datetime.fromtimestamp(date_modified)
         date_modified_str = date_modified.strftime("%Y-%m-%d")
         time_created_str = date_modified_str
-        
+
         try:
             date_taken = Image.open(file_path)._getexif()[36867]
             date_taken = datetime.datetime.strptime(date_taken, "%Y:%m:%d %H:%M:%S")
             date_taken_str = date_taken.strftime("%Y-%m-%d")
             time_created_str = date_taken_str
-        except:
+        except Exception:
             pass
-        
+
         filename = os.path.basename(file_path)
 
         return f"{self.archive_path}{time_created_str}_{filename}"
@@ -50,7 +50,7 @@ class Curator:
 
             Parameters
                 path (str): A file path e.g. C:/Users/James/Pictures/
-            
+
             Returns:
                 None
         """
@@ -69,7 +69,9 @@ class Curator:
             print(operation_cancelled_str)
             return
 
-        continue_prompt = input(f"{len(file_paths)} image files ready to be curated. Do you wish to continue? y/n ")
+        continue_prompt = input(
+            f"{len(file_paths)} image files ready to be curated. Do you wish to continue? y/n "
+        )
         print()
 
         if continue_prompt != "y":
@@ -90,7 +92,7 @@ class Curator:
 
             Parameters
                 file_path (str): A file path e.g. C:/Users/James/Pictures/hello.jpg
-            
+
             Returns:
                 unique_path (str): A file path that does not exist
                     e.g. C:/Users/James/Pictures/hello.jpg
@@ -106,5 +108,5 @@ class Curator:
                 n += 1
             else:
                 break
-        
+
         return unique_path
