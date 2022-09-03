@@ -1,6 +1,8 @@
 import os
 from src.curator import Curator
 
+ARCHIVE_PATH_FILENAME = ".archive-path.txt"
+
 
 def welcome_message():
     owl_art = (
@@ -34,15 +36,15 @@ def archive_path_input(override=False):
         if path[-1] != "/":
             path += "/"
 
-        with open(Curator.archive_path_filename, "w") as f:
+        with open(ARCHIVE_PATH_FILENAME, "w") as f:
             f.write(path)
         
         return path
 
-    if (not os.path.exists(Curator.archive_path_filename)) or override:
+    if (not os.path.exists(".archive-path.txt")) or override:
         path = cache_archive_path()
     else:
-        with open(Curator.archive_path_filename, "r") as f:
+        with open(ARCHIVE_PATH_FILENAME, "r") as f:
             path = f.readline()
 
     print(f"Destination path being used: '{path}'\n")
@@ -52,7 +54,8 @@ def archive_path_input(override=False):
 def main():
     print(welcome_message())
 
-    path = archive_path_input()
+    c = Curator()
+    c.set_archive_path(archive_path_input())
 
     user_actions = (
         "0: Change destination path\n"
@@ -67,10 +70,12 @@ def main():
         print()
 
         if user_action_key == "0":
-            archive_path_input(True)
+            c.set_archive_path(archive_path_input(True))
         elif user_action_key == "1":
-            Curator.curate(path, device)
+            path = input("Please paste a source path: ")
+            c.curate_from_source(path)
         elif user_action_key == "q":
+            print("Goodbye!")
             exit(0)
         else:
             print("ERROR: Please enter a valid user action")
