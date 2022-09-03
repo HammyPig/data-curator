@@ -14,7 +14,7 @@ class Curator:
     def set_archive_path(self, archive_path):
         self.archive_path = archive_path
 
-    def curated(self, file_path, device=""):
+    def curated(self, file_path):
         # date attribute
         date_modified = os.path.getmtime(file_path)
         date_modified = datetime.datetime.fromtimestamp(date_modified)
@@ -32,12 +32,9 @@ class Curator:
         directory = os.path.dirname(file_path)
         filename = os.path.basename(file_path)
 
-        if device == "":
-            return f"{time_created_str}_{filename}"
-        else:
-            return f"{time_created_str}_{device}_{filename}"
+        return f"{time_created_str}_{filename}"
 
-    def curate_from_source(self, path, device):
+    def curate_from_source(self, path):
         # collect image files
         file_paths = []
         for path, subdirs, files in os.walk(path):
